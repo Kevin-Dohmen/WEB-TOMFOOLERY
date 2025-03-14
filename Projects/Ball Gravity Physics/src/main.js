@@ -4,13 +4,13 @@ const DebugWindow = document.getElementById("DebugWindow");
 // variables
 let debug = true;
 
-let ballamnt = 10;
+let ballamnt = 100;
 
 // physics
 let LastTime = 0;
 let DeltaTime = 0;
 
-let maxVel = 50;
+const worldScale = 50; // 1 unit = 50 pixels
 
 let effectors = [];
 let balls = [];
@@ -23,8 +23,9 @@ let PageInFocus = true;
 let ResetDeltaTime = false;
 
 function createBall(x, y, r, color) {
-    let b = new ball(r, color);
+    let b = new ball(r, color, BallWrapper);
     b.pos = new Vector2(x, y);
+    b.worldScale = worldScale;
     balls.push(b);
     return b;
 }
@@ -32,9 +33,12 @@ function createBall(x, y, r, color) {
 function createRandomBall() {
     let x = Math.random() * ScreenSize.x;
     let y = Math.random() * ScreenSize.y;
-    let r = Math.random() * 20 + 10;
+    let mass = Math.random() * 10 + 5;
+    let r = mass * 2;
     let color = "rgb(" + Math.random() * 255 + "," + Math.random() * 255 + "," + Math.random() * 255 + ", 0.5)";
-    return createBall(x, y, r, color);
+    let ball = createBall(x, y, r, color);
+    ball.mass = mass;
+    return ball;
 }
 
 function createRandomBalls(n) {
@@ -77,18 +81,18 @@ function update() {
     // update balls
     for (let i = 0; i < balls.length; i++) {
         for (let j = 0; j < effectors.length; j++) {
-            balls[i].applyEffector(effectors[j]);
+            balls[i].applyEffector(effectors[j], DeltaTime);
         }
     }
 
     // apply physics
     for (let i = 0; i < balls.length; i++) {
-        balls[i].applyPhysics();
+        balls[i].applyPhysics(DeltaTime);
     }
 
     // apply velocity
     for (let i = 0; i < balls.length; i++) {
-        balls[i].applyVelocity();
+        balls[i].applyVelocity(DeltaTime);
     }
 
     // draw balls
@@ -97,13 +101,15 @@ function update() {
     }
 
     // update debug window
-    DebugWindow.innerHTML =
-    "FPS: " + Math.round(1 / DeltaTime, 2)
-    + "<br>DeltaTime: " + DeltaTime
-    + "<br>ScreenSize: " + ScreenSize.x + ", " + ScreenSize.y
-    + "<br>MousePos: " + MouseEffector.pos.x + ", " + MouseEffector.pos.y
-    + "<br>MouseStrength: " + MouseEffector.strength
-    + "<br> BallAmount: " + balls.length;
+    if (debug) {
+        DebugWindow.innerHTML =
+        "FPS: " + Math.round(1 / DeltaTime, 2)
+        + "<br>DeltaTime: " + DeltaTime
+        + "<br>ScreenSize: " + ScreenSize.x + ", " + ScreenSize.y
+        + "<br>MousePos: " + MouseEffector.pos.x + ", " + MouseEffector.pos.y
+        + "<br>MouseStrength: " + MouseEffector.strength
+        + "<br> BallAmount: " + balls.length;
+    }
 
     window.requestAnimationFrame(update);
 }
