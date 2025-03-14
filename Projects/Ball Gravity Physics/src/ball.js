@@ -1,12 +1,14 @@
-class ball {
+class physicsBall {
     constructor(r, color, wrapper) {
         // physics
         this.pos = new Vector2(0, 0);
         this.vel = new Vector2(0, 0);
         this.force = new Vector2(0, 0);
-        this.drag = 0.5;
+        this.drag = .5;
         this.mass = 5;
         this.radius = r;
+
+        this._simulationTimeScale = 10;
 
         this.worldScale = 1;
 
@@ -30,7 +32,7 @@ class ball {
 
     applyEffector(eff, DeltaTime) {
         let effDir = Vector2.sub(eff.pos, this.pos);
-        let effDist = effDir.len() / this.worldScale;
+        let effDist = effDir.len();// * this.worldScale;
         effDir.normalize();
 
         const clampAt = 10;
@@ -43,7 +45,7 @@ class ball {
 
     applyPhysics(DeltaTime) {
         // drag
-        this.force.add(Vector2.multF(this.vel, -Math.pow(this.drag, DeltaTime)));
+        this.force.add(Vector2.multF(this.vel, -Math.pow(this.drag, (DeltaTime * this._simulationTimeScale))));
 
         // random force
         // let rand = (new Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1)).normalize();
@@ -67,7 +69,7 @@ class ball {
 
     applyVelocity(DeltaTime) {
         // apply force
-        this.vel.add(Vector2.multF(this.force, DeltaTime / this.mass));
+        this.vel.add(Vector2.multF(this.force, (DeltaTime * this._simulationTimeScale) / this.mass));
         this.force = new Vector2(0, 0);
 
         // clamp velocity
@@ -79,6 +81,29 @@ class ball {
         }
 
         // apply velocity and scale
-        this.pos.add(Vector2.multF(this.vel, DeltaTime).multF(this.worldScale));
+        this.pos.add(Vector2.multF(this.vel, (DeltaTime * this._simulationTimeScale)));//.multF(this.worldScale));
+    }
+}
+
+class staticBall {
+    constructor(r, color, wrapper) {
+        this.pos = new Vector2(0, 0);
+        this.radius = r;
+
+        this.element = document.createElement("div");
+        this.element.style.position = "fixed";
+        this.element.style.width = r * 2 + "px";
+        this.element.style.height = r * 2 + "px";
+        this.element.style.borderRadius = "50%";
+        this.element.style.backgroundColor = color;
+        this.element.style.left = "0px";
+        this.element.style.top = "0px";
+
+        wrapper.appendChild(this.element);
+    }
+
+    draw() {
+        this.element.style.left = (this.pos.x - this.radius) + "px";
+        this.element.style.top = (this.pos.y - this.radius) + "px";
     }
 }

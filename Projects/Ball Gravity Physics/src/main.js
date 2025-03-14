@@ -2,7 +2,7 @@ const BallWrapper = document.getElementById("BallWrapper");
 const DebugWindow = document.getElementById("DebugWindow");
 
 // variables
-let debug = true;
+let debug = false;
 
 let ballamnt = 100;
 
@@ -23,7 +23,7 @@ let PageInFocus = true;
 let ResetDeltaTime = false;
 
 function createBall(x, y, r, color) {
-    let b = new ball(r, color, BallWrapper);
+    let b = new physicsBall(r, color, BallWrapper);
     b.pos = new Vector2(x, y);
     b.worldScale = worldScale;
     balls.push(b);
@@ -33,11 +33,19 @@ function createBall(x, y, r, color) {
 function createRandomBall() {
     let x = Math.random() * ScreenSize.x;
     let y = Math.random() * ScreenSize.y;
-    let mass = Math.random() * 10 + 5;
-    let r = mass * 2;
+    let mass = Math.random() * 20 + 10;
+    let r = mass * .25;
     let color = "rgb(" + Math.random() * 255 + "," + Math.random() * 255 + "," + Math.random() * 255 + ", 0.5)";
     let ball = createBall(x, y, r, color);
-    ball.mass = mass;
+    ball.drag = 0;
+    ball.mass = mass*10;
+    ball.gravityFunc = (effDist) => (ball.mass*10) / (effDist * effDist);
+
+    // random velocity
+    let velDir = new Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
+    let vel = Math.random() * 3;
+    ball.vel = Vector2.multF(velDir, vel);
+    
     return ball;
 }
 
@@ -45,6 +53,7 @@ function createRandomBalls(n) {
     arr = [];
     for (let i = 0; i < n; i++) {
         arr.push(createRandomBall());
+        effectors.push(arr[i]);
     }
     return arr;
 }
@@ -108,7 +117,10 @@ function update() {
         + "<br>ScreenSize: " + ScreenSize.x + ", " + ScreenSize.y
         + "<br>MousePos: " + MouseEffector.pos.x + ", " + MouseEffector.pos.y
         + "<br>MouseStrength: " + MouseEffector.strength
-        + "<br> BallAmount: " + balls.length;
+        + "<br>BallCount: " + balls.length
+        + "<br>EffectorCount: " + effectors.length
+        + "<br>AVG Vel: " + Math.round(balls.reduce((acc, b) => acc + b.vel.len(), 0), 2) / balls.length
+        ;
     }
 
     window.requestAnimationFrame(update);
@@ -120,7 +132,7 @@ function start() {
     MouseEffector = new effector();
     MouseEffector.pos = new Vector2(window.innerWidth / 2, window.innerHeight / 2);
     MouseEffector.strength = 1000;
-    effectors.push(MouseEffector);
+    // effectors.push(MouseEffector);
 
     // effector2 = new effector();
     // effector2.pos = new Vector2(window.innerWidth / 2, window.innerHeight / 2);
