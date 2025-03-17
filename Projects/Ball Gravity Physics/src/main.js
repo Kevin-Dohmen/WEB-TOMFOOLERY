@@ -10,6 +10,9 @@ let ballamnt = 100;
 let LastTime = 0;
 let DeltaTime = 0;
 
+let frameUpdateLastTime = 0;
+let frameUpdateDeltaTime = 0;
+
 const worldScale = 50; // 1 unit = 50 pixels
 
 let effectors = [];
@@ -35,7 +38,7 @@ function createRandomBall() {
     let y = Math.random() * ScreenSize.y;
     let mass = Math.random() * 20 + 10;
     let r = mass * .25;
-    let color = "rgb(" + Math.random() * 255 + "," + Math.random() * 255 + "," + Math.random() * 255 + ", 0.5)";
+    let color = "rgb(" + Math.random() * 255 + "," + Math.random() * 255 + "," + Math.random() * 255 + ", 0.75)";
     let ball = createBall(x, y, r, color);
     ball.drag = 0;
     ball.mass = mass*10;
@@ -83,26 +86,10 @@ function getMousePos(e) {
     return new Vector2(e.clientX, e.clientY);
 }
 
-function update() {
-    updateScreenSize();
-    updateDeltaTime();
-
-    // update balls
-    for (let i = 0; i < balls.length; i++) {
-        for (let j = 0; j < effectors.length; j++) {
-            balls[i].applyEffector(effectors[j], DeltaTime);
-        }
-    }
-
-    // apply physics
-    for (let i = 0; i < balls.length; i++) {
-        balls[i].applyPhysics(DeltaTime);
-    }
-
-    // apply velocity
-    for (let i = 0; i < balls.length; i++) {
-        balls[i].applyVelocity(DeltaTime);
-    }
+function updateFrame() {
+    let time = getTime();
+    frameUpdateDeltaTime = (time - frameUpdateLastTime) / 1000;
+    frameUpdateLastTime = time;
 
     // draw balls
     for (let i = 0; i < balls.length; i++) {
@@ -112,7 +99,8 @@ function update() {
     // update debug window
     if (debug) {
         DebugWindow.innerHTML =
-        "FPS: " + Math.round(1 / DeltaTime, 2)
+        "Sim FPS: " + Math.round(1 / DeltaTime, 2)
+        + "<br>Frame FPS: " + Math.round(1 / frameUpdateDeltaTime, 2)
         + "<br>DeltaTime: " + DeltaTime
         + "<br>ScreenSize: " + ScreenSize.x + ", " + ScreenSize.y
         + "<br>MousePos: " + MouseEffector.pos.x + ", " + MouseEffector.pos.y
@@ -123,7 +111,31 @@ function update() {
         ;
     }
 
-    window.requestAnimationFrame(update);
+    window.requestAnimationFrame(updateFrame);
+}
+
+function updatePhysics(){
+    if (PageInFocus) {
+        updateScreenSize();
+        updateDeltaTime();
+
+        // update balls
+        for (let i = 0; i < balls.length; i++) {
+            for (let j = 0; j < effectors.length; j++) {
+                balls[i].applyEffector(effectors[j], DeltaTime);
+            }
+        }
+
+        // apply physics
+        for (let i = 0; i < balls.length; i++) {
+            balls[i].applyPhysics(DeltaTime);
+        }
+
+        // apply velocity
+        for (let i = 0; i < balls.length; i++) {
+            balls[i].applyVelocity(DeltaTime);
+        }
+    }
 }
 
 function start() {
@@ -140,7 +152,9 @@ function start() {
     // effectors.push(effector2);
 
     LastTime = getTime();
-    window.requestAnimationFrame(update);
+    setInterval(updatePhysics, 0);
+    window.requestAnimationFrame(updateFrame);
+    
 }
 
 document.addEventListener("mousemove", (e) => {
